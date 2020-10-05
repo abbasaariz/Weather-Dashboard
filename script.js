@@ -1,7 +1,10 @@
 
-var APIkey = "&appid=203c06c77c2f8b15c22f10329b14a47b";
-var cityName = "Atlanta";
-var queryURL = "https://api.openweathermap.org/data/2.5/weather?id=524901&APPID=203c06c77c2f8b15c22f10329b14a47b";
+// Steps
+// 1. Get Perth
+
+var APIkey = "203c06c77c2f8b15c22f10329b14a47b";
+var cityName = "Perth";
+var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + APIkey;
 
 $.ajax({
     method: "GET",
