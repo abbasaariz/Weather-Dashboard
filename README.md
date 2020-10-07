@@ -5,4 +5,4 @@ javascript - to change html and store user-input
 AJAX - to get the data from server side
 Bootstrap - to pull existing html and CSS for creating resposive structure and styling
 HTML - to create elements on the DOM
-CSS - to style the html elements
+CSS - to style the html elements.
