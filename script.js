@@ -1,151 +1,162 @@
 
-// Steps
-// 1. Get Perth
-
-var APIkey = "203c06c77c2f8b15c22f10329b14a47b";
-var cityName = "Perth";
-var queryURL = "http://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + APIkey;
-
-$.ajax({
-    method: "GET",
-    url: queryURL,
-    success: function(data) {
-        console.log(data);
+var city = "";
+// variables 
+var searchCity = $("#search-city");
+var searchButton = $("#search-button");
+var clearButton = $("#clear-history");
+var currentCity = $("#current-city");
+var currentTemperature = $("#temperature");
+var currentHumidty = $("#humidity");
+var currentWSpeed = $("#wind-speed");
+var currentUvindex = $("#uv-index");
+var sCity = [];
+// searches the city 
+function find(c) {
+    for (var i = 0; i < sCity.length; i++) {
+        if (c.toUpperCase() === sCity[i]) {
+            return -1;
+        }
     }
-})
+    return 1;
+}
+// the API key
+var APIKey = "203c06c77c2f8b15c22f10329b14a47b";
+// Display the curent and future weather to the user
+function displayWeather(event) {
+    event.preventDefault();
+    if (searchCity.val().trim() !== "") {
+        city = searchCity.val().trim();
+        currentWeather(city);
+    }
+}
+// the AJAX call
+function currentWeather(city) {
+    //  the URL so we can get a data from server side
+    var queryURL = "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&APPID=" + APIKey;
+    $.ajax({
+        url: queryURL,
+        method: "GET",
+    }).then(function (response) {
 
-// function searchCity(cityname) {
-//     var queryURL = "https://api.openweathermap.org/data/2.5/weather?q=524901&APPID=203c06c77c2f8b15c22f10329b14a47b" + cityName + APIkey;
+        console.log(response);
+        var weathericon = response.weather[0].icon;
+        var iconurl = "https://openweathermap.org/img/wn/" + weathericon + "@2x.png";
+        var date = new Date(response.dt * 1000).toLocaleDateString();
 
-//     $.ajax({
-//         url: queryURL,
-//         method: 'GET'
-//     })
-//         .then(function (response) {
-//             console.log(response);
-//             console.log(queryURL);
-//             $("#current").empty();
-//             var mainDate = moment().format('L');
+        $(currentCity).html(response.name + "(" + date + ")" + "<img src=" + iconurl + ">");
 
-//             var cityNameEl = $("<h2>").text(response.name);
-//             var displayMainDate = cityNameEl.append(" " + mainDate);
-//             var tempEL = $("<p>").text("Tempraturer: " + response.main.temp);
-//             var humEl = $("<p>").text("Humidity: " + response.main.humidity);
-//             var windEl = $("<p>").text("Wind Speed: " + response.wind.speed);
-//             var currentweather = response.weather[0].main;
+        // displays temperature and convert to F
+        var tempF = (response.main.temp - 273.15) * 1.80 + 32;
+        $(currentTemperature).html((tempF).toFixed(2) + "&#8457");
+        // displays the Humidity
+        $(currentHumidty).html(response.main.humidity + "%");
+        // displays Wind speed and convert to MPH
+        var ws = response.wind.speed;
+        var windsmph = (ws * 2.237).toFixed(1);
+        $(currentWSpeed).html(windsmph + "MPH");
+        // displays UVIndex.
+        UVIndex(response.coord.lon, response.coord.lat);
+        forecast(response.id);
+        if (response.cod == 200) {
+            sCity = JSON.parse(localStorage.getItem("cityname"));
+            console.log(sCity);
+            if (sCity == null) {
+                sCity = [];
+                sCity.push(city.toUpperCase()
+                );
+                localStorage.setItem("cityname", JSON.stringify(sCity));
+                addToList(city);
+            }
+            else {
+                if (find(city) > 0) {
+                    sCity.push(city.toUpperCase());
+                    localStorage.setItem("cityname", JSON.stringify(sCity));
+                    addToList(city);
+                }
+            }
+        }
 
-//             if (currentweather === "Rain") {
-//                 var currentIcon = $('<img>').attr("src", "http://openweathermap.org/img/wn/09d.png");
-//                 currentIcon.attr("style", "height: 60px; width: 60px");
-//             } else if (currentweather === "Clouds") {
-//                 var currentIcon = $('<img>').attr("src", "http://openweathermap.org/img/wn/03d.png");
-//                 currentIcon.attr("style", "height: 60px; width: 60px");
-//             } else if (currentweather === "Clear") {
-//                 var currentIcon = $('<img>').attr("src", "http://openweathermap.org/img/wn/01d.png");
-//                 currentIcon.attr("style", "height: 60px; width: 60px");
-//             }
-//             else if (currentweather === "Drizzle") {
-//                 var currentIcon = $('<img>').attr("src", "http://openweathermap.org/img/wn/10d.png");
-//                 currentIcon.attr("style", "height: 60px; width: 60px");
-//             }
-//             else if (currentweather === "Snow") {
-//                 var currentIcon = $('<img>').attr("src", "http://openweathermap.org/img/wn/13d.png");
-//                 currentIcon.attr("style", "height: 60px; width: 60px");
-//             }
-//             var newDiv = $('<div>');
-//             newDiv.append(displayMainDate, currentIcon, tempEL, humEl, windEl);
-//             $("#current").html(newDiv);
+    });
+}
+// returns the UVIindex response
+function UVIndex(ln, lt) {
+    // builds the url for uvindex
+    var uvqURL = "https://api.openweathermap.org/data/2.5/uvi?appid=" + APIKey + "&lat=" + lt + "&lon=" + ln;
+    $.ajax({
+        url: uvqURL,
+        method: "GET"
+    }).then(function (response) {
+        $(currentUvindex).html(response.value);
+    });
+}
 
-//             var lat = response.coord.lat;
-//             var lon = response.coord.lon;
-//             var queryURLUV = "https://api.openweathermap.org/data/2.5/uvi?&appid=203c06c77c2f8b15c22f10329b14a47b" + lat + "&lon=" + lon;
+// displays the 5 days forecast for the current city
+function forecast(cityid) {
+    var dayover = false;
+    var queryforecastURL = "https://api.openweathermap.org/data/2.5/forecast?id=" + cityid + "&appid=" + APIKey;
+    $.ajax({
+        url: queryforecastURL,
+        method: "GET"
+    }).then(function (response) {
 
-//             $.ajax({
-//                 url: queryURLUV,
-//                 method: 'GET'
-//             }).then(function (response) {
-//                 $('#uvl-display').empty();
-//                 var uvlresults = response.value;
-//                 var uvlEl = $("<button class='btn bg-success'>").text("UV Index: " + response.value);
-//                 $('#uvl-display').html(uvlEl);
+        for (i = 0; i < 5; i++) {
+            var date = new Date((response.list[((i + 1) * 8) - 1].dt) * 1000).toLocaleDateString();
+            var iconcode = response.list[((i + 1) * 8) - 1].weather[0].icon;
+            var iconurl = "https://openweathermap.org/img/wn/" + iconcode + ".png";
+            var tempK = response.list[((i + 1) * 8) - 1].main.temp;
+            var tempF = (((tempK - 273.5) * 1.80) + 32).toFixed(2);
+            var humidity = response.list[((i + 1) * 8) - 1].main.humidity;
 
-//             });
-//         });
+            $("#fDate" + i).html(date);
+            $("#fImg" + i).html("<img src=" + iconurl + ">");
+            $("#fTemp" + i).html(tempF + "&#8457");
+            $("#fHumidity" + i).html(humidity + "%");
+        }
 
-// function displayWeather() {
+    });
+}
 
+// adds the passed city on the search history
+function addToList(c) {
+    var listEl = $("<li>" + c.toUpperCase() + "</li>");
+    $(listEl).attr("class", "list-group-item");
+    $(listEl).attr("data-value", c.toUpperCase());
+    $(".list-group").append(listEl);
+}
+// displays the past search again 
+function invokePastSearch(event) {
+    var liEl = event.target;
+    if (event.target.matches("li")) {
+        city = liEl.textContent.trim();
+        currentWeather(city);
+    }
 
-//         $.ajax({
-//             url: queryURLforcast,
-//             method: 'GET'
-//         }).then(function (response) {
-//             var results = response.list;
-//             $("#5day").empty();
-//             for (var i = 0; i < results.length; i += 8) {
-//                 var fiveDayDiv = $("<div class='card shadow-lg text-white bg-primary mx-auto mb-10 p-2' style='width: 8.5rem; height: 11rem;'>");
-//                 var date = results[i].dt_txt;
-//                 var setD = date.substr(0, 10)
-//                 var temp = results[i].main.temp;
-//                 var hum = results[i].main.humidity;
-//                 var h5date = $("<h5 class='card-title'>").text(setD);
-//                 var pTemp = $("<p class='card-text'>").text("Temp: " + temp);;
-//                 var pHum = $("<p class='card-text'>").text("Humidity " + hum);;
-//                 var weather = results[i].weather[0].main
+}
 
-//                 if (weather === "Rain") {
-//                     var icon = $('<img>').attr("src", "http://openweathermap.org/img/wn/09d.png");
-//                     icon.attr("style", "height: 40px; width: 40px");
-//                 } else if (weather === "Clouds") {
-//                     var icon = $('<img>').attr("src", "http://openweathermap.org/img/wn/03d.png");
-//                     icon.attr("style", "height: 40px; width: 40px");
-//                 }
-//                 else if (weather === "Clear") {
-//                     var icon = $('<img>').attr("src", "http://openweathermap.org/img/wn/01d.png");
-//                     icon.attr("style", "height: 40px; width: 40px");
-//                 }
-//                 else if (weather === "Drizzle") {
-//                     var icon = $('<img>').attr("src", "http://openweathermap.org/img/wn/10d.png");
-//                     icon.attr("style", "height: 40px; width: 40px");
-//                 }
-//                 else if (weather === "Snow") {
-//                     var icon = $('<img>').attr("src", "http://openweathermap.org/img/wn/13d.png");
-//                     icon.attr("style", "height: 40px; width: 40px");
-//                 }
+// render function
+function loadlastCity() {
+    $("ul").empty();
+    var sCity = JSON.parse(localStorage.getItem("cityname"));
+    if (sCity !== null) {
+        sCity = JSON.parse(localStorage.getItem("cityname"));
+        for (i = 0; i < sCity.length; i++) {
+            addToList(sCity[i]);
+        }
+        city = sCity[i - 1];
+        currentWeather(city);
+    }
 
-//                 fiveDayDiv.append(h5date);
-//                 fiveDayDiv.append(icon);
-//                 fiveDayDiv.append(pTemp);
-//                 fiveDayDiv.append(pHum);
-//                 $("#5day").append(fiveDayDiv);
-//             }
+}
+// clears the search history from the page
+function clearHistory(event) {
+    event.preventDefault();
+    sCity = [];
+    localStorage.removeItem("cityname");
+    document.location.reload();
 
-//         });
-
-//     }
-//     pageLoad();
-
-//     $("#select-city").on("click", function (event) {
-//         event.preventDefault();
-//         var cityInput = $("#city-input").val().trim();
-//         var textContent = $(this).siblings("input").val();
-//         var storearr = [];
-//         storearr.push(textContent);
-//         localStorage.setItem('cityName', JSON.stringify(storearr));
-//         searchCity(cityInput);
-//         pageLoad();
-//     });
-
-//     function pageLoad() {
-//         var lastSearch = JSON.parse(localStorage.getItem("cityName"));
-//         var searchDiv = $("<button class='btn border text-muted mt-1 shadow-sm bg-white rounded' style='width: 12rem;'>").text(lastSearch);
-//         var psearch = $("<div>");
-//         psearch.append(searchDiv)
-//         $("#searchhistory").prepend(psearch);
-//     }
-
-//     $("#searchhistory").on('click', '.btn', function (event) {
-//         event.preventDefault();
-//         console.log($(this).text());
-//         searchCity($(this).text());
-//     })
-// }
+}
+// clicks Handlers
+$("#search-button").on("click", displayWeather);
+$(document).on("click", invokePastSearch);
+$(window).on("load", loadlastCity);
+$("#clear-history").on("click", clearHistory);
